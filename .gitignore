@@ -7,3 +7,5 @@ __pycache__/
 data/ratings.db
 .venv/
 data/contact_sheet.jpg
+branddir/data/*.db
+branddir/__pycache__/

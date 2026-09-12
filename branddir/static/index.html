@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brand Directory</title>
+<style>
+  :root {
+    --bg:#f5f4f2; --card:#fff; --ink:#16150f; --muted:#8a877d; --line:#e2e0da;
+    --up:#3f8f5e; --down:#c8443c; --accent:#3d5fd9;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.5 ui-sans-serif,-apple-system,"Helvetica Neue",sans-serif;
+    padding:24px 16px 48px; overflow-x:hidden;
+  }
+  .wrap { max-width:640px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:baseline;
+           gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  h1 { font-size:16px; letter-spacing:.16em; text-transform:uppercase;
+       margin:0; font-weight:600; }
+  .meta { font-size:12px; color:var(--muted); }
+
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px;
+           box-shadow:0 6px 22px rgba(0,0,0,.06); padding:14px; margin-bottom:18px; }
+  .panel h2 { font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+              color:var(--muted); margin:0 0 10px; font-weight:600; }
+  form { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  input {
+    font:inherit; padding:9px 11px; border:1px solid var(--line); border-radius:9px;
+    background:var(--bg); color:var(--ink); min-width:0; width:100%;
+  }
+  input:focus { outline:none; border-color:var(--accent); background:#fff; }
+  form .full { grid-column:1 / -1; }
+  button.submit {
+    grid-column:1 / -1; font:inherit; font-weight:500; padding:10px;
+    border:1px solid var(--ink); border-radius:9px; background:var(--ink);
+    color:var(--bg); cursor:pointer;
+  }
+  button.submit:disabled { opacity:.5; cursor:default; }
+  .note { grid-column:1 / -1; font-size:12px; color:var(--muted); min-height:1.4em; }
+  .note.err { color:var(--down); }
+
+  ul { list-style:none; margin:0; padding:0; }
+  li.row {
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:11px 13px; margin-bottom:8px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .rank { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;
+          width:24px; flex:none; text-align:right; }
+  .body { flex:1; min-width:0; }
+  .name { font-size:14px; font-weight:500; letter-spacing:.02em;
+          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sub { font-size:12px; color:var(--muted); margin-top:2px;
+         display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .sub a { color:var(--muted); text-decoration:none; border-bottom:1px solid var(--line);
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .sub a:hover { color:var(--ink); }
+  .badge { font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+           border:1px solid var(--line); border-radius:999px; padding:2px 8px;
+           color:var(--muted); white-space:nowrap; }
+  .badge.shopify { color:var(--up); border-color:#cfe3d6; }
+  .badge.failed  { color:var(--down); border-color:#eed3d1; }
+
+  .votes { display:flex; align-items:center; gap:4px; flex:none; }
+  .votes button {
+    width:30px; height:30px; border-radius:8px; background:#fff; cursor:pointer;
+    border:1px solid var(--line); font-size:13px; line-height:1; color:var(--muted);
+    display:flex; align-items:center; justify-content:center; transition:transform .08s;
+  }
+  .votes button:active { transform:scale(.9); }
+  .votes button.on.up   { color:var(--up);   border-color:var(--up); }
+  .votes button.on.down { color:var(--down); border-color:var(--down); }
+  .score { font-size:13px; font-variant-numeric:tabular-nums; min-width:26px;
+           text-align:center; font-weight:500; }
+  .empty { color:var(--muted); font-size:13px; text-align:center; padding:22px 0; }
+
+  @media (max-width:440px) {
+    form { grid-template-columns:1fr; }
+    .rank { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Brand Directory</h1>
+    <div class="meta" id="meta">loading…</div>
+  </header>
+
+  <div class="panel">
+    <h2>Add a brand</h2>
+    <form id="f" autocomplete="off">
+      <input id="name" placeholder="Brand name" required maxlength="120">
+      <input id="url" placeholder="storymfg.com" required maxlength="500">
+      <input id="submitter" class="full" placeholder="Your nickname (optional)" maxlength="60">
+      <button class="submit" id="go" type="submit">Submit</button>
+      <div class="note" id="note"></div>
+    </form>
+  </div>
+
+  <ul id="list"><li class="empty">loading…</li></ul>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[<>&"]/g, c => (
+  {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+// One token per browser is the whole identity model here: enough to stop the
+// accidental double-click, not pretending to be real auth.
+let token = localStorage.getItem('branddir_token');
+if (!token) { token = crypto.randomUUID(); localStorage.setItem('branddir_token', token); }
+
+let brands = [], mine = {}, poll = null;
+
+function badge(b) {
+  if (b.status === 'pending') return '<span class="badge">checking…</span>';
+  if (b.status === 'failed')  return '<span class="badge failed">check failed</span>';
+  if (b.platform === 'shopify')
+    return `<span class="badge shopify">shopify · ${b.product_count} products</span>`;
+  return '<span class="badge">unknown platform</span>';
+}
+
+function render() {
+  const list = el('list');
+  if (!brands.length) {
+    list.innerHTML = '<li class="empty">nothing here yet — add the first brand</li>';
+    return;
+  }
+  list.innerHTML = brands.map(b => {
+    const v = mine[b.id] || 0;
+    return `<li class="row">
+      <div class="rank">${b.rank}</div>
+      <div class="body">
+        <div class="name">${esc(b.name)}</div>
+        <div class="sub">
+          <a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.domain)}</a>
+          ${badge(b)}
+          ${b.submitter ? `<span>via ${esc(b.submitter)}</span>` : ''}
+        </div>
+      </div>
+      <div class="votes">
+        <button class="up${v === 1 ? ' on' : ''}" data-id="${b.id}" data-v="1"
+                title="upvote">▲</button>
+        <span class="score">${b.score}</span>
+        <button class="down${v === -1 ? ' on' : ''}" data-id="${b.id}" data-v="-1"
+                title="downvote">▼</button>
+      </div></li>`;
+  }).join('');
+}
+
+async function load() {
+  const [r, v] = await Promise.all([
+    fetch('/api/brands').then(r => r.json()),
+    fetch('/api/votes/' + token).then(r => r.json()),
+  ]);
+  brands = r.brands;
+  mine = Object.fromEntries(Object.entries(v.votes).map(([k, x]) => [k, x]));
+  el('meta').textContent = `${brands.length} brand${brands.length === 1 ? '' : 's'} · ranked by wilson score`;
+  render();
+  // Only keep polling while a background scrape is still outstanding.
+  const pending = brands.some(b => b.status === 'pending');
+  clearTimeout(poll);
+  if (pending) poll = setTimeout(load, 2000);
+}
+
+el('list').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-id]');
+  if (!btn) return;
+  const id = +btn.dataset.id, value = +btn.dataset.v;
+  const r = await fetch('/api/vote', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({brand_id: id, value, voter_token: token}),
+  });
+  if (!r.ok) return;
+  const d = await r.json();
+  mine[id] = value;
+  const b = brands.find(b => b.id === id);
+  if (b) b.score = d.score;
+  render();   // re-rank happens on the next load; the score updates now
+});
+
+el('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const note = el('note');
+  note.className = 'note'; note.textContent = '';
+  el('go').disabled = true;
+  try {
+    const r = await fetch('/api/brands', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name: el('name').value, url: el('url').value,
+        submitter: el('submitter').value || null,
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      note.className = 'note err';
+      note.textContent = d.detail || 'could not add that one';
+    } else {
+      el('name').value = el('url').value = '';
+      note.textContent = 'added — checking the storefront…';
+      await load();
+    }
+  } catch (err) {
+    note.className = 'note err';
+    note.textContent = 'network error';
+  } finally {
+    el('go').disabled = false;
+  }
+});
+
+load();
+</script>
+</body>
+</html>
