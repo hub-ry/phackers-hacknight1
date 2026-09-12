@@ -3,190 +3,184 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Brand Directory</title>
+<title>Swatch · brands</title>
 <style>
   :root {
-    --bg:#f5f4f2; --card:#fff; --ink:#16150f; --muted:#8a877d; --line:#e2e0da;
-    --up:#3f8f5e; --down:#c8443c; --accent:#3d5fd9;
+    --paper:#faf9f6; --ink:#14130f; --soft:#6f6c62; --rule:#dcd8cf;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:ui-sans-serif,-apple-system,"Helvetica Neue",Arial,sans-serif;
   }
   * { box-sizing:border-box; }
-  body {
-    margin:0; background:var(--bg); color:var(--ink);
-    font:15px/1.5 ui-sans-serif,-apple-system,"Helvetica Neue",sans-serif;
-    padding:24px 16px 48px; overflow-x:hidden;
-  }
-  .wrap { max-width:640px; margin:0 auto; }
-  header { display:flex; justify-content:space-between; align-items:baseline;
-           gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-  h1 { font-size:16px; letter-spacing:.16em; text-transform:uppercase;
-       margin:0; font-weight:600; }
-  .meta { font-size:12px; color:var(--muted); }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font:16px/1.65 var(--serif); overflow-x:hidden; }
+  .col { max-width:600px; margin:0 auto; padding:0 24px 120px; }
 
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px;
-           box-shadow:0 6px 22px rgba(0,0,0,.06); padding:14px; margin-bottom:18px; }
-  .panel h2 { font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-              color:var(--muted); margin:0 0 10px; font-weight:600; }
-  form { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  input {
-    font:inherit; padding:9px 11px; border:1px solid var(--line); border-radius:9px;
-    background:var(--bg); color:var(--ink); min-width:0; width:100%;
-  }
-  input:focus { outline:none; border-color:var(--accent); background:#fff; }
-  form .full { grid-column:1 / -1; }
-  button.submit {
-    grid-column:1 / -1; font:inherit; font-weight:500; padding:10px;
-    border:1px solid var(--ink); border-radius:9px; background:var(--ink);
-    color:var(--bg); cursor:pointer;
-  }
-  button.submit:disabled { opacity:.5; cursor:default; }
-  .note { grid-column:1 / -1; font-size:12px; color:var(--muted); min-height:1.4em; }
-  .note.err { color:var(--down); }
+  .masthead { padding:44px 0 0; }
+  .masthead h1 { font:400 13px/1 var(--sans); letter-spacing:.34em;
+                 text-transform:uppercase; margin:0; }
+  .masthead nav { margin-top:12px; font:400 12px/1 var(--sans);
+                  letter-spacing:.12em; text-transform:uppercase; }
+  .masthead nav a { color:var(--soft); text-decoration:none; margin-right:18px; }
+  .masthead nav a:hover { color:var(--ink); }
+  hr.rule { border:0; border-top:2px solid var(--ink); margin:26px 0 0; }
 
-  ul { list-style:none; margin:0; padding:0; }
-  li.row {
-    background:var(--card); border:1px solid var(--line); border-radius:12px;
-    padding:11px 13px; margin-bottom:8px;
-    display:flex; align-items:center; gap:12px;
-  }
-  .rank { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;
-          width:24px; flex:none; text-align:right; }
-  .body { flex:1; min-width:0; }
-  .name { font-size:14px; font-weight:500; letter-spacing:.02em;
-          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sub { font-size:12px; color:var(--muted); margin-top:2px;
-         display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .sub a { color:var(--muted); text-decoration:none; border-bottom:1px solid var(--line);
-           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-  .sub a:hover { color:var(--ink); }
-  .badge { font-size:10px; letter-spacing:.08em; text-transform:uppercase;
-           border:1px solid var(--line); border-radius:999px; padding:2px 8px;
-           color:var(--muted); white-space:nowrap; }
-  .badge.shopify { color:var(--up); border-color:#cfe3d6; }
-  .badge.failed  { color:var(--down); border-color:#eed3d1; }
-  /* Starred = already in the swipe corpus. Everything else is a suggestion:
-     nobody builds a personal brand stack, which would defeat the recommender. */
-  .badge.starred { color:#8a6d1f; border-color:#e6d9b4; background:#fdf8ea;
-                   margin-left:8px; vertical-align:1px; }
-  .row.starred .rank { color:#c9a227; }
+  .display { font:400 42px/1.1 var(--serif); letter-spacing:-.015em; margin:34px 0 10px; }
+  .standfirst { font:400 15px/1.6 var(--serif); color:var(--soft); margin:0 0 6px; }
+  .kicker { font:400 10px/1 var(--sans); letter-spacing:.22em;
+            text-transform:uppercase; color:var(--soft); margin:54px 0 6px; }
 
-  .votes { display:flex; align-items:center; gap:4px; flex:none; }
-  .votes button {
-    width:30px; height:30px; border-radius:8px; background:#fff; cursor:pointer;
-    border:1px solid var(--line); font-size:13px; line-height:1; color:var(--muted);
-    display:flex; align-items:center; justify-content:center; transition:transform .08s;
-  }
-  .votes button:active { transform:scale(.9); }
-  .votes button.on.up   { color:var(--up);   border-color:var(--up); }
-  .votes button.on.down { color:var(--down); border-color:var(--down); }
-  .score { font-size:13px; font-variant-numeric:tabular-nums; min-width:26px;
-           text-align:center; font-weight:500; }
-  .empty { color:var(--muted); font-size:13px; text-align:center; padding:22px 0; }
+  /* Submission sits as a plain ruled block, not a boxed form. */
+  form { margin-top:14px; }
+  .field { border-bottom:1px solid var(--rule); padding:10px 0; }
+  .field label { display:block; font:400 10px/1 var(--sans); letter-spacing:.18em;
+                 text-transform:uppercase; color:var(--soft); margin-bottom:6px; }
+  .field input { width:100%; border:0; background:none; outline:none; padding:0;
+                 font:400 19px/1.3 var(--serif); color:var(--ink); }
+  .field input::placeholder { color:#bdb8ae; }
+  button.send { margin-top:18px; font:400 11px/1 var(--sans); letter-spacing:.18em;
+                text-transform:uppercase; background:var(--ink); color:var(--paper);
+                border:0; padding:13px 24px; cursor:pointer; }
+  button.send:disabled { opacity:.4; cursor:default; }
+  .note { font:400 14px/1.6 var(--serif); color:var(--soft); margin:12px 0 0; }
+  .note.err { color:#a33; }
 
-  @media (max-width:440px) {
-    form { grid-template-columns:1fr; }
-    .rank { display:none; }
-  }
+  /* The list: one brand per row, stacked, separated by hairlines. */
+  ul { list-style:none; margin:14px 0 0; padding:0; }
+  li { display:flex; align-items:flex-start; gap:16px;
+       padding:20px 0; border-top:1px solid var(--rule); }
+  li:first-child { border-top:1px solid var(--ink); }
+  li.starred { background:linear-gradient(90deg,#f3efe3 0%,transparent 62%);
+               margin:0 -14px; padding-left:14px; padding-right:14px; }
+
+  .pos { flex:0 0 34px; font:400 22px/1.15 var(--serif); color:var(--soft);
+         letter-spacing:-.02em; padding-top:2px; }
+  li.starred .pos { color:#a9862c; }
+  .body { flex:1 1 auto; min-width:0; }
+  .body .n { font:400 23px/1.2 var(--serif); letter-spacing:-.01em;
+             overflow-wrap:anywhere; }
+  .body .d { display:block; margin-top:5px; font:400 10px/1.7 var(--sans);
+             letter-spacing:.15em; text-transform:uppercase; color:var(--soft);
+             overflow-wrap:anywhere; }
+  .body .d a { color:var(--soft); text-decoration:none; border-bottom:1px solid var(--rule); }
+  .body .d a:hover { color:var(--ink); }
+  .body .d em { font-style:normal; color:#a9862c; }
+
+  .votes { flex:0 0 auto; display:flex; align-items:center; gap:9px; padding-top:4px; }
+  .votes button { background:none; border:0; cursor:pointer; padding:2px;
+                  font-size:12px; line-height:1; color:#c3beb4; }
+  .votes button:hover { color:var(--ink); }
+  .votes button.on { color:var(--ink); }
+  .votes .score { font:400 19px/1 var(--serif); min-width:22px; text-align:center; }
+
+  .empty { font:400 15px/1.7 var(--serif); color:var(--soft); padding:28px 0; }
+  @media (max-width:480px) { .display { font-size:34px; } .body .n { font-size:20px; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Brand Directory</h1>
-    <div class="meta" id="meta">loading…</div>
-  </header>
-
-  <div class="panel">
-    <h2>Add a brand</h2>
-    <form id="f" autocomplete="off">
-      <input id="name" placeholder="Brand name" required maxlength="120">
-      <input id="url" placeholder="storymfg.com" required maxlength="500">
-      <input id="submitter" class="full" placeholder="Your nickname (optional)" maxlength="60">
-      <button class="submit" id="go" type="submit">Submit</button>
-      <div class="note" id="note"></div>
-    </form>
+<div class="col">
+  <div class="masthead">
+    <h1>Swatch</h1>
+    <nav><a href="/">Swipe</a><a href="/report">Taste</a><a href="/brands/">Brands</a></nav>
   </div>
+  <hr class="rule">
 
-  <ul id="list"><li class="empty">loading…</li></ul>
+  <h2 class="display">Brands</h2>
+  <p class="standfirst" id="meta">Loading…</p>
+  <p class="standfirst">Starred labels are the ones Swatch already swipes. Everything
+     else is a suggestion — vote it up and it climbs.</p>
+
+  <p class="kicker">Suggest a label</p>
+  <form id="f">
+    <div class="field"><label>Name</label>
+      <input id="name" required maxlength="80" placeholder="Story mfg."></div>
+    <div class="field"><label>Website</label>
+      <input id="url" required type="url" placeholder="https://storymfg.com"></div>
+    <div class="field"><label>Your name — optional</label>
+      <input id="submitter" maxlength="40" placeholder="anon"></div>
+    <button class="send" id="go" type="submit">Submit</button>
+    <p class="note" id="note"></p>
+  </form>
+
+  <p class="kicker">The list</p>
+  <ul id="list"><li class="empty">Loading…</li></ul>
 </div>
 
 <script>
 const el = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[<>&"]/g, c => (
-  {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const esc = s => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 
-// One token per browser is the whole identity model here: enough to stop the
-// accidental double-click, not pretending to be real auth.
-let token = localStorage.getItem('branddir_token');
-if (!token) { token = crypto.randomUUID(); localStorage.setItem('branddir_token', token); }
+// Mounted under /brands, so every path must be relative -- an absolute
+// /api/... would hit the parent Swatch app instead of this one.
+const API = p => new URL(p, location.href.replace(/[^/]*$/, '')).pathname;
+
+let token = localStorage.getItem('swatch_voter');
+if (!token) { token = crypto.randomUUID(); localStorage.setItem('swatch_voter', token); }
 
 let brands = [], mine = {}, poll = null;
 
-function badge(b) {
-  if (b.status === 'pending') return '<span class="badge">checking…</span>';
-  if (b.status === 'failed')  return '<span class="badge failed">check failed</span>';
-  if (b.platform === 'shopify')
-    return `<span class="badge shopify">shopify · ${b.product_count} products</span>`;
-  return '<span class="badge">unknown platform</span>';
+function detail(b) {
+  const bits = [`<a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.domain)}</a>`];
+  if (b.in_corpus) bits.push('<em>in swatch</em>');
+  else if (b.status === 'pending') bits.push('checking…');
+  else if (b.status === 'failed') bits.push('check failed');
+  else if (b.platform === 'shopify') bits.push(`shopify · ${b.product_count} products`);
+  else bits.push('platform unknown');
+  if (b.submitter) bits.push('via ' + esc(b.submitter));
+  return bits.join(' &nbsp;·&nbsp; ');
 }
 
 function render() {
-  const list = el('list');
   if (!brands.length) {
-    list.innerHTML = '<li class="empty">nothing here yet — add the first brand</li>';
+    el('list').innerHTML = '<li class="empty">Nothing here yet. Add the first label.</li>';
     return;
   }
-  list.innerHTML = brands.map(b => {
+  el('list').innerHTML = brands.map(b => {
     const v = mine[b.id] || 0;
-    return `<li class="row${b.in_corpus ? ' starred' : ''}">
-      <div class="rank">${b.in_corpus ? '★' : b.rank}</div>
+    return `<li class="${b.in_corpus ? 'starred' : ''}">
+      <div class="pos">${b.in_corpus ? '★' : b.rank}</div>
       <div class="body">
-        <div class="name">${esc(b.name)}${b.in_corpus
-          ? '<span class="badge starred">in swatch</span>' : ''}</div>
-        <div class="sub">
-          <a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.domain)}</a>
-          ${badge(b)}
-          ${b.submitter ? `<span>via ${esc(b.submitter)}</span>` : ''}
-        </div>
+        <div class="n">${esc(b.name)}</div>
+        <span class="d">${detail(b)}</span>
       </div>
       <div class="votes">
-        <button class="up${v === 1 ? ' on' : ''}" data-id="${b.id}" data-v="1"
-                title="upvote">▲</button>
+        <button class="${v === 1 ? 'on' : ''}" data-id="${b.id}" data-v="1" title="up">▲</button>
         <span class="score">${b.score}</span>
-        <button class="down${v === -1 ? ' on' : ''}" data-id="${b.id}" data-v="-1"
-                title="downvote">▼</button>
+        <button class="${v === -1 ? 'on' : ''}" data-id="${b.id}" data-v="-1" title="down">▼</button>
       </div></li>`;
   }).join('');
 }
 
 async function load() {
   const [r, v] = await Promise.all([
-    fetch('/api/brands').then(r => r.json()),
-    fetch('/api/votes/' + token).then(r => r.json()),
+    fetch(API('api/brands')).then(r => r.json()),
+    fetch(API('api/votes/' + token)).then(r => r.json()),
   ]);
   brands = r.brands;
-  mine = Object.fromEntries(Object.entries(v.votes).map(([k, x]) => [k, x]));
-  el('meta').textContent = `${brands.length} brand${brands.length === 1 ? '' : 's'} · ranked by wilson score`;
+  mine = v.votes || {};
+  const sugg = brands.filter(b => !b.in_corpus).length;
+  el('meta').textContent =
+    `${brands.length} labels · ${sugg} suggested · ranked by Wilson score, so a few
+     votes cannot outrank a proven one.`;
   render();
   // Only keep polling while a background scrape is still outstanding.
-  const pending = brands.some(b => b.status === 'pending');
   clearTimeout(poll);
-  if (pending) poll = setTimeout(load, 2000);
+  if (brands.some(b => b.status === 'pending')) poll = setTimeout(load, 2000);
 }
 
 el('list').addEventListener('click', async e => {
   const btn = e.target.closest('button[data-id]');
   if (!btn) return;
   const id = +btn.dataset.id, value = +btn.dataset.v;
-  const r = await fetch('/api/vote', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({brand_id: id, value, voter_token: token}),
+  const r = await fetch(API('api/vote'), {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({brand_id:id, value, voter_token:token}),
   });
   if (!r.ok) return;
   const d = await r.json();
   mine[id] = value;
   const b = brands.find(b => b.id === id);
   if (b) b.score = d.score;
-  render();   // re-rank happens on the next load; the score updates now
+  render();   // re-ranking waits for the next load; the score moves now
 });
 
 el('f').addEventListener('submit', async e => {
@@ -195,28 +189,21 @@ el('f').addEventListener('submit', async e => {
   note.className = 'note'; note.textContent = '';
   el('go').disabled = true;
   try {
-    const r = await fetch('/api/brands', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        name: el('name').value, url: el('url').value,
-        submitter: el('submitter').value || null,
-      }),
+    const r = await fetch(API('api/brands'), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name: el('name').value, url: el('url').value,
+                            submitter: el('submitter').value || null}),
     });
     const d = await r.json();
-    if (!r.ok) {
-      note.className = 'note err';
-      note.textContent = d.detail || 'could not add that one';
-    } else {
+    if (!r.ok) { note.className = 'note err'; note.textContent = d.detail || 'Could not add that one.'; }
+    else {
       el('name').value = el('url').value = '';
-      note.textContent = 'added — checking the storefront…';
+      note.textContent = 'Added — checking the storefront…';
       await load();
     }
   } catch (err) {
-    note.className = 'note err';
-    note.textContent = 'network error';
-  } finally {
-    el('go').disabled = false;
-  }
+    note.className = 'note err'; note.textContent = 'Network error.';
+  } finally { el('go').disabled = false; }
 });
 
 load();
