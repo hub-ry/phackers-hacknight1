@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swatch</title>
+<style>
+  :root {
+    --bg: #f5f4f2; --card: #fff; --ink: #16150f; --muted: #8a877d;
+    --line: #e2e0da; --accent: #16150f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 ui-sans-serif, -apple-system, "Helvetica Neue", sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 24px 16px 32px;
+  }
+  header {
+    width: 100%; max-width: 420px; display: flex;
+    justify-content: space-between; align-items: baseline; margin-bottom: 16px;
+  }
+  h1 { font-size: 17px; letter-spacing: .14em; text-transform: uppercase; margin: 0; font-weight: 600; }
+  .meta { font-size: 12px; color: var(--muted); }
+
+  .stage { width: 100%; max-width: 420px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .card img { display: block; width: 100%; aspect-ratio: 3/4; object-fit: contain; background: #fff; }
+  .info { padding: 12px 14px 14px; border-top: 1px solid var(--line); }
+  .title { font-size: 14px; font-weight: 500; line-height: 1.35;
+           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sub { font-size: 12px; color: var(--muted); margin-top: 4px;
+         display: flex; justify-content: space-between; }
+  .brand { text-transform: uppercase; letter-spacing: .08em; }
+
+  .rate { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 14px; }
+  .rate button {
+    font: inherit; font-size: 17px; font-weight: 500; padding: 14px 0;
+    background: #fff; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; cursor: pointer; transition: transform .06s, background .12s;
+  }
+  .rate button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .rate button:active { transform: scale(.95); }
+  .scale { display: flex; justify-content: space-between; font-size: 11px;
+           color: var(--muted); margin-top: 6px; letter-spacing: .04em; }
+  .foot { max-width: 420px; width: 100%; margin-top: 14px; display: flex;
+          justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .foot button { font: inherit; background: none; border: none; color: var(--muted);
+                 text-decoration: underline; cursor: pointer; padding: 0; }
+  .empty { padding: 80px 0; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Swatch</h1>
+    <div class="meta" id="meta">loading</div>
+  </header>
+
+  <div class="stage" id="stage"><div class="empty">loading corpus…</div></div>
+
+  <div class="foot">
+    <span>press <b>1</b>–<b>5</b></span>
+    <button id="undo">undo last</button>
+  </div>
+
+<script>
+let queue = [];
+let rated = 0;
+
+async function refill() {
+  const r = await fetch('/api/queue').then(r => r.json());
+  queue = r.cards;
+  rated = r.rated;
+  document.getElementById('meta').textContent = `${r.rated} rated · ${r.mode}`;
+  render();
+}
+
+function render() {
+  const stage = document.getElementById('stage');
+  if (!queue.length) { stage.innerHTML = '<div class="empty">nothing left to rate</div>'; return; }
+  const c = queue[0];
+  stage.innerHTML = `
+    <div class="card">
+      <img src="${c.image}" alt="">
+      <div class="info">
+        <div class="title">${c.title.replace(/</g,'&lt;')}</div>
+        <div class="sub"><span class="brand">${c.brand}</span><span>${c.price ? '$'+c.price : ''}</span></div>
+      </div>
+    </div>
+    <div class="rate">
+      ${[1,2,3,4,5].map(n => `<button data-n="${n}">${n}</button>`).join('')}
+    </div>
+    <div class="scale"><span>never</span><span>neutral</span><span>love it</span></div>`;
+
+  stage.querySelectorAll('.rate button').forEach(b =>
+    b.onclick = () => rate(parseInt(b.dataset.n)));
+
+  // Preload the next image so swiping never stalls on a network fetch.
+  if (queue[1]) new Image().src = queue[1].image;
+}
+
+async function rate(n) {
+  const c = queue.shift();
+  rated++;
+  document.getElementById('meta').textContent = `${rated} rated · saving…`;
+  render();
+  await fetch('/api/rate', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({uid: c.uid, rating: n})
+  });
+  // Rebuild the queue periodically so the taste vector actually takes effect.
+  if (queue.length < 4 || rated % 10 === 0) await refill();
+  else document.getElementById('meta').textContent = `${rated} rated`;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key >= '1' && e.key <= '5' && queue.length) rate(parseInt(e.key));
+});
+document.getElementById('undo').onclick = async () => {
+  await fetch('/api/undo', {method: 'POST'});
+  await refill();
+};
+
+refill();
+</script>
+</body>
+</html>

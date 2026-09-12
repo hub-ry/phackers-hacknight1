@@ -1,0 +1,17 @@
+{
+  "purebytrade":        {"url": "https://purebytrade.com"},
+  "adererror":          {"url": "https://www.adererror.com", "skip": "custom Korean stack, no JSON"},
+  "has2sons":           {"url": "https://has2sons.com"},
+  "illusivestudiosus":  {"url": "https://illusivestudiosus.com"},
+  "faizehnahar":        {"url": "https://faizehnahar.com"},
+  "kapital":            {"url": "https://haruyama365.com", "collection": "kapital-1"},
+  "velour":             {"url": "https://velourgarments.eu"},
+  "sinnerseeking":      {"url": "https://sinnerseeking.com"},
+  "arran":              {"url": "https://arran-studios.com"},
+  "storymfg":           {"url": "https://storymfg.com"},
+  "olderbrother":       {"url": "https://olderbrother.us"},
+  "corridor":           {"url": "https://corridornyc.com"},
+  "3sixteen":           {"url": "https://3sixteen.com"},
+  "standardandstrange": {"url": "https://standardandstrange.com"},
+  "postimperial":       {"url": "https://post-imperial.com"}
+}

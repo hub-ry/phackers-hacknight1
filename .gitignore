@@ -1,0 +1,9 @@
+.env
+data/images/
+data/normalized/
+data/*.npy
+__pycache__/
+*.pyc
+data/ratings.db
+.venv/
+data/contact_sheet.jpg
