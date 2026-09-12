@@ -19,6 +19,10 @@
   header { width:100%; max-width:400px; display:flex;
            justify-content:space-between; align-items:baseline; margin-bottom:14px; }
   h1 { font-size:16px; letter-spacing:.16em; text-transform:uppercase; margin:0; font-weight:600; }
+  header { flex-wrap:wrap; gap:6px 10px; }
+  nav { flex:1; }
+  nav a { font-size:12px; color:var(--muted); text-decoration:none; margin-left:12px; }
+  nav a:hover { color:var(--ink); text-decoration:underline; }
   .meta { font-size:12px; color:var(--muted); }
 
   /* Cards are stacked absolutely so the one behind shows through during a drag. */
@@ -73,7 +77,11 @@
 </style>
 </head>
 <body>
-  <header><h1>Swatch</h1><div class="meta" id="meta">loading</div></header>
+  <header>
+    <h1>Swatch</h1>
+    <nav><a href="/report">taste</a><a href="/brands/">brands</a></nav>
+    <div class="meta" id="meta">loading</div>
+  </header>
   <div class="deck" id="deck"><div class="empty">loading corpus…</div></div>
   <div class="foot">
     <span class="hint key">← nope · → like · ↑ love · space skip</span>

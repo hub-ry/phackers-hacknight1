@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swatch · your taste</title>
+<style>
+  :root { --bg:#f5f4f2; --card:#fff; --ink:#16150f; --muted:#8a877d; --line:#e2e0da;
+          --love:#3d5fd9; --nope:#c8443c; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.6 ui-sans-serif,-apple-system,"Helvetica Neue",sans-serif;
+         padding:28px 18px 60px; }
+  .wrap { max-width:760px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:baseline;
+           margin-bottom:6px; flex-wrap:wrap; gap:8px; }
+  h1 { font-size:16px; letter-spacing:.16em; text-transform:uppercase; margin:0; font-weight:600; }
+  nav a { font-size:12px; color:var(--muted); text-decoration:none; margin-left:14px; }
+  nav a:hover { color:var(--ink); text-decoration:underline; }
+  .lede { color:var(--muted); font-size:13px; margin:0 0 22px; }
+
+  .tallies { display:flex; gap:10px; margin-bottom:26px; flex-wrap:wrap; }
+  .tally { background:var(--card); border:1px solid var(--line); border-radius:9px;
+           padding:10px 16px; min-width:84px; }
+  .tally b { display:block; font-size:21px; font-weight:600; line-height:1.2; }
+  .tally span { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+
+  h2 { font-size:12px; letter-spacing:.13em; text-transform:uppercase;
+       color:var(--muted); margin:30px 0 12px; font-weight:600; }
+  .cluster { background:var(--card); border:1px solid var(--line); border-radius:11px;
+             padding:16px 18px; margin-bottom:14px; }
+  .cname { font-size:16px; font-weight:600; margin-bottom:2px; }
+  .cmeta { font-size:12px; color:var(--muted); margin-bottom:12px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .chip { font-size:11px; letter-spacing:.05em; border:1px solid var(--line);
+          border-radius:20px; padding:3px 10px; background:#fbfaf8; }
+  .eg { font-size:12px; color:var(--muted); }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:12px; }
+  .p { text-decoration:none; color:inherit; display:block; }
+  .p img { width:100%; aspect-ratio:3/4; object-fit:contain; background:#fff;
+           border:1px solid var(--line); border-radius:8px; display:block; }
+  .p .t { font-size:12px; margin-top:6px; line-height:1.35;
+          display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .p .s { font-size:11px; color:var(--muted); }
+  .p:hover .t { text-decoration:underline; }
+  .empty { background:var(--card); border:1px solid var(--line); border-radius:11px;
+           padding:34px; text-align:center; color:var(--muted); }
+  .danger { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); }
+  .danger button { font:inherit; font-size:12px; color:var(--nope); background:none;
+                   border:1px solid #eed3d1; border-radius:7px; padding:7px 13px; cursor:pointer; }
+  .danger button:hover { background:#fdf2f1; }
+  .danger p { font-size:12px; color:var(--muted); margin:8px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Your taste</h1>
+    <nav><a href="/">← swipe</a><a href="/brands/">brand board</a></nav>
+  </header>
+  <p class="lede">Built from your swipes. Nothing here is hand-written — every
+     grouping comes out of the vectors.</p>
+  <div id="out"><div class="empty">loading…</div></div>
+</div>
+
+<script>
+const esc = s => String(s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+function product(p) {
+  return `<a class="p" href="${esc(p.link)}" target="_blank" rel="noopener">
+    <img src="${esc(p.image)}" alt="" loading="lazy">
+    <div class="t">${esc(p.title)}</div>
+    <div class="s">${esc(p.brand)}${p.score !== undefined ? ' · ' + p.score : ''}</div></a>`;
+}
+
+// A cluster has no name of its own, so name it after the words its members
+// repeat -- that keeps the label honest about where it came from.
+function clusterName(c) {
+  return c.words.slice(0, 2).join(' / ') || `taste ${c.id + 1}`;
+}
+
+async function load() {
+  const d = await fetch('/api/report').then(r => r.json());
+  const out = document.getElementById('out');
+
+  const tallies = `<div class="tallies">
+    <div class="tally"><b>${d.rated}</b><span>rated</span></div>
+    <div class="tally"><b>${d.loved}</b><span>loved</span></div>
+    <div class="tally"><b>${d.liked}</b><span>liked</span></div>
+    <div class="tally"><b>${d.noped}</b><span>noped</span></div>
+  </div>`;
+
+  if (!d.ready) {
+    out.innerHTML = tallies + `<div class="empty">${esc(d.message)}</div>`;
+    return;
+  }
+
+  let html = tallies;
+  html += `<h2>${d.clusters.length} distinct taste${d.clusters.length > 1 ? 's' : ''}</h2>`;
+  for (const c of d.clusters) {
+    html += `<div class="cluster">
+      <div class="cname">${esc(clusterName(c))}</div>
+      <div class="cmeta">${c.size} of your likes · mostly ${c.brands.map(esc).join(', ')}</div>
+      <div class="chips">${c.words.map(w => `<span class="chip">${esc(w)}</span>`).join('')}</div>
+      <div class="eg">you liked: ${c.examples.map(esc).join(' · ')}</div>
+      <h2>what this taste recommends</h2>
+      <div class="grid">${c.recommends.map(product).join('')}</div>
+    </div>`;
+  }
+
+  html += `<h2>Top picks overall</h2><div class="grid">${d.top_picks.map(product).join('')}</div>`;
+
+  if (d.avoiding && d.avoiding.words && d.avoiding.words.length) {
+    html += `<h2>What you're avoiding</h2><div class="cluster">
+      <div class="chips">${d.avoiding.words.map(w => `<span class="chip">${esc(w)}</span>`).join('')}</div>
+      <div class="eg">mostly from ${d.avoiding.brands.map(esc).join(', ')}</div></div>`;
+  }
+
+  html += `<div class="danger">
+    <button id="reset">clear my taste</button>
+    <p>Deletes every rating. The taste vectors are derived from them, so this resets the algorithm completely.</p>
+  </div>`;
+
+  out.innerHTML = html;
+  document.getElementById('reset').onclick = async () => {
+    if (!confirm('Delete all ' + d.rated + ' ratings? This cannot be undone.')) return;
+    await fetch('/api/reset', {method: 'POST'});
+    load();
+  };
+}
+load();
+</script>
+</body>
+</html>
