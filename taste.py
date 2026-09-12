@@ -30,7 +30,7 @@ class Corpus:
         self.items = {i["uid"]: i for i in items}
 
     def taste_vector(self, ratings):
-        """ratings: {uid: 1..5} -> one unit vector, or None if no signal yet."""
+        """ratings: {uid: NOPE|LIKE|LOVE} -> one unit vector, or None if no signal."""
         rows, weights = [], []
         for uid, r in ratings.items():
             w = WEIGHTS.get(r, 0.0)
@@ -58,7 +58,7 @@ class Corpus:
 if __name__ == "__main__":
     c = Corpus()
     print("corpus:", c.M.shape)
-    fake = {c.uids[i]: 5 for i in range(0, 60, 20)}
+    fake = {c.uids[i]: LOVE for i in range(0, 60, 20)}
     uids, s = c.score(fake)
     print("top 5 for a fake taste:")
     for u, sc in zip(uids[:5], s[:5]):
