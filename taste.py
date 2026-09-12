@@ -8,9 +8,11 @@ import numpy as np
 
 ROOT = pathlib.Path(__file__).parent
 
-# Asymmetric: positives define where you're going, negatives only nudge you off
-# the worst stuff. Dislikes are diffuse and less directional than likes.
-WEIGHTS = {5: 2.0, 4: 1.0, 3: 0.0, 2: -0.5, 1: -1.0}
+# Three-way swipe. Asymmetric on purpose: positives define where you're going,
+# a dislike only nudges you off the worst stuff, because "no" is diffuse
+# (could be the cut, colour, styling, or the photo) while "yes" is directional.
+NOPE, LIKE, LOVE = 1, 2, 3
+WEIGHTS = {LOVE: 2.0, LIKE: 1.0, NOPE: -1.0}
 
 
 class Corpus:

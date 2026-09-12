@@ -41,7 +41,7 @@ def card(uid):
 
 class Rating(BaseModel):
     uid: str
-    rating: int
+    rating: int  # 1 nope, 2 like, 3 love
 
 
 @app.get("/api/queue")
@@ -70,6 +70,8 @@ def queue():
 @app.post("/api/rate")
 def rate(r: Rating):
     import time
+    if r.rating not in taste.WEIGHTS:
+        return {"ok": False, "error": "rating must be 1 (nope), 2 (like) or 3 (love)"}
     with db() as con:
         con.execute("INSERT OR REPLACE INTO ratings VALUES (?,?,?)",
                     (r.uid, r.rating, time.time()))

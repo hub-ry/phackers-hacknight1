@@ -2,127 +2,224 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>Swatch</title>
 <style>
   :root {
-    --bg: #f5f4f2; --card: #fff; --ink: #16150f; --muted: #8a877d;
-    --line: #e2e0da; --accent: #16150f;
+    --bg:#f5f4f2; --card:#fff; --ink:#16150f; --muted:#8a877d; --line:#e2e0da;
+    --nope:#c8443c; --like:#3f8f5e; --love:#3d5fd9;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing:border-box; -webkit-user-select:none; user-select:none; }
   body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 15px/1.5 ui-sans-serif, -apple-system, "Helvetica Neue", sans-serif;
-    display: flex; flex-direction: column; align-items: center;
-    min-height: 100vh; padding: 24px 16px 32px;
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font:15px/1.5 ui-sans-serif,-apple-system,"Helvetica Neue",sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    height:100vh; padding:20px 16px 24px;
   }
-  header {
-    width: 100%; max-width: 420px; display: flex;
-    justify-content: space-between; align-items: baseline; margin-bottom: 16px;
-  }
-  h1 { font-size: 17px; letter-spacing: .14em; text-transform: uppercase; margin: 0; font-weight: 600; }
-  .meta { font-size: 12px; color: var(--muted); }
+  header { width:100%; max-width:400px; display:flex;
+           justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+  h1 { font-size:16px; letter-spacing:.16em; text-transform:uppercase; margin:0; font-weight:600; }
+  .meta { font-size:12px; color:var(--muted); }
 
-  .stage { width: 100%; max-width: 420px; }
+  /* Cards are stacked absolutely so the one behind shows through during a drag. */
+  .deck { position:relative; width:100%; max-width:400px; flex:1; min-height:0; }
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-    overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    position:absolute; inset:0; background:var(--card);
+    border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    box-shadow:0 6px 22px rgba(0,0,0,.09);
+    display:flex; flex-direction:column; touch-action:none; cursor:grab;
   }
-  .card img { display: block; width: 100%; aspect-ratio: 3/4; object-fit: contain; background: #fff; }
-  .info { padding: 12px 14px 14px; border-top: 1px solid var(--line); }
-  .title { font-size: 14px; font-weight: 500; line-height: 1.35;
-           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .sub { font-size: 12px; color: var(--muted); margin-top: 4px;
-         display: flex; justify-content: space-between; }
-  .brand { text-transform: uppercase; letter-spacing: .08em; }
+  .card.behind { transform:scale(.95) translateY(10px); box-shadow:none; opacity:.7; }
+  .card.animate { transition:transform .32s cubic-bezier(.2,.7,.3,1), opacity .32s; }
+  .card:active { cursor:grabbing; }
+  .card img { flex:1; min-height:0; width:100%; object-fit:contain;
+              background:#fff; pointer-events:none; }
+  .info { padding:11px 14px 13px; border-top:1px solid var(--line); }
+  .title { font-size:14px; font-weight:500; line-height:1.3;
+           display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .sub { font-size:12px; color:var(--muted); margin-top:3px;
+         display:flex; justify-content:space-between; }
+  .brand { text-transform:uppercase; letter-spacing:.08em; }
 
-  .rate { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 14px; }
-  .rate button {
-    font: inherit; font-size: 17px; font-weight: 500; padding: 14px 0;
-    background: #fff; color: var(--ink); border: 1px solid var(--line);
-    border-radius: 8px; cursor: pointer; transition: transform .06s, background .12s;
+  /* Verdict stamps fade in proportionally to drag distance. */
+  .stamp {
+    position:absolute; top:22px; padding:6px 14px; border:3px solid;
+    border-radius:8px; font-size:18px; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; opacity:0; pointer-events:none;
   }
-  .rate button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .rate button:active { transform: scale(.95); }
-  .scale { display: flex; justify-content: space-between; font-size: 11px;
-           color: var(--muted); margin-top: 6px; letter-spacing: .04em; }
-  .foot { max-width: 420px; width: 100%; margin-top: 14px; display: flex;
-          justify-content: space-between; font-size: 12px; color: var(--muted); }
-  .foot button { font: inherit; background: none; border: none; color: var(--muted);
-                 text-decoration: underline; cursor: pointer; padding: 0; }
-  .empty { padding: 80px 0; text-align: center; color: var(--muted); }
+  .stamp.nope { right:18px; color:var(--nope); border-color:var(--nope); transform:rotate(14deg); }
+  .stamp.like { left:18px;  color:var(--like); border-color:var(--like); transform:rotate(-14deg); }
+  .stamp.love { left:50%; top:40%; margin-left:-64px; width:128px; text-align:center;
+                color:var(--love); border-color:var(--love); }
+
+  .actions { display:flex; gap:14px; justify-content:center; margin-top:16px; }
+  .actions button {
+    width:54px; height:54px; border-radius:50%; background:#fff; cursor:pointer;
+    border:1px solid var(--line); font-size:20px; line-height:1;
+    box-shadow:0 2px 6px rgba(0,0,0,.06); transition:transform .08s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .actions button:active { transform:scale(.9); }
+  .actions .b-nope { color:var(--nope); }
+  .actions .b-like { color:var(--like); }
+  .actions .b-love { color:var(--love); width:60px; height:60px; font-size:24px; }
+  .foot { max-width:400px; width:100%; margin-top:12px; display:flex;
+          justify-content:space-between; font-size:11px; color:var(--muted); }
+  .foot button { font:inherit; background:none; border:none; color:var(--muted);
+                 text-decoration:underline; cursor:pointer; padding:0; }
+  .empty { display:flex; align-items:center; justify-content:center;
+           height:100%; color:var(--muted); }
 </style>
 </head>
 <body>
-  <header>
-    <h1>Swatch</h1>
-    <div class="meta" id="meta">loading</div>
-  </header>
-
-  <div class="stage" id="stage"><div class="empty">loading corpus…</div></div>
-
+  <header><h1>Swatch</h1><div class="meta" id="meta">loading</div></header>
+  <div class="deck" id="deck"><div class="empty">loading corpus…</div></div>
+  <div class="actions">
+    <button class="b-nope" id="bn" title="Nope (←)">✕</button>
+    <button class="b-love" id="bl" title="Love it (↑)">★</button>
+    <button class="b-like" id="bk" title="Like (→)">♥</button>
+  </div>
   <div class="foot">
-    <span>press <b>1</b>–<b>5</b></span>
-    <button id="undo">undo last</button>
+    <span>← nope · → like · ↑ love · space skip</span>
+    <button id="undo">undo</button>
   </div>
 
 <script>
-let queue = [];
-let rated = 0;
+const NOPE = 1, LIKE = 2, LOVE = 3;
+const THRESH_X = 110;   // horizontal px before a drag counts as a verdict
+const THRESH_Y = 110;   // upward px for a super swipe
+
+let queue = [], rated = 0, busy = false;
+
+const el = id => document.getElementById(id);
 
 async function refill() {
   const r = await fetch('/api/queue').then(r => r.json());
-  queue = r.cards;
-  rated = r.rated;
-  document.getElementById('meta').textContent = `${r.rated} rated · ${r.mode}`;
+  queue = r.cards; rated = r.rated;
+  el('meta').textContent = `${r.rated} rated · ${r.mode}`;
   render();
+}
+
+function cardHTML(c, behind) {
+  return `<div class="card${behind ? ' behind' : ''}">
+    <span class="stamp nope">nope</span>
+    <span class="stamp like">like</span>
+    <span class="stamp love">love it</span>
+    <img src="${c.image}" alt="" draggable="false">
+    <div class="info">
+      <div class="title">${c.title.replace(/</g,'&lt;')}</div>
+      <div class="sub"><span class="brand">${c.brand}</span><span>${c.price ? '$'+c.price : ''}</span></div>
+    </div></div>`;
 }
 
 function render() {
-  const stage = document.getElementById('stage');
-  if (!queue.length) { stage.innerHTML = '<div class="empty">nothing left to rate</div>'; return; }
-  const c = queue[0];
-  stage.innerHTML = `
-    <div class="card">
-      <img src="${c.image}" alt="">
-      <div class="info">
-        <div class="title">${c.title.replace(/</g,'&lt;')}</div>
-        <div class="sub"><span class="brand">${c.brand}</span><span>${c.price ? '$'+c.price : ''}</span></div>
-      </div>
-    </div>
-    <div class="rate">
-      ${[1,2,3,4,5].map(n => `<button data-n="${n}">${n}</button>`).join('')}
-    </div>
-    <div class="scale"><span>never</span><span>neutral</span><span>love it</span></div>`;
-
-  stage.querySelectorAll('.rate button').forEach(b =>
-    b.onclick = () => rate(parseInt(b.dataset.n)));
-
-  // Preload the next image so swiping never stalls on a network fetch.
-  if (queue[1]) new Image().src = queue[1].image;
+  const deck = el('deck');
+  if (!queue.length) { deck.innerHTML = '<div class="empty">nothing left to rate</div>'; return; }
+  // Render the next card first so it paints *behind* the active one.
+  deck.innerHTML = (queue[1] ? cardHTML(queue[1], true) : '') + cardHTML(queue[0], false);
+  attachDrag(deck.querySelector('.card:last-child'));
+  if (queue[2]) new Image().src = queue[2].image;
 }
 
-async function rate(n) {
-  const c = queue.shift();
-  rated++;
-  document.getElementById('meta').textContent = `${rated} rated · saving…`;
-  render();
-  await fetch('/api/rate', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({uid: c.uid, rating: n})
+/* Drag: translate + rotate the card, and fade in whichever stamp the
+   current offset implies. Release past a threshold commits the rating. */
+function attachDrag(card) {
+  let sx = 0, sy = 0, dx = 0, dy = 0, down = false;
+
+  const stamps = {
+    [NOPE]: card.querySelector('.stamp.nope'),
+    [LIKE]: card.querySelector('.stamp.like'),
+    [LOVE]: card.querySelector('.stamp.love'),
+  };
+
+  const verdict = () => {
+    if (-dy > THRESH_Y && Math.abs(dx) < THRESH_X) return LOVE;
+    if (dx > THRESH_X) return LIKE;
+    if (dx < -THRESH_X) return NOPE;
+    return 0;
+  };
+
+  const paint = () => {
+    card.style.transform =
+      `translate(${dx}px, ${dy}px) rotate(${dx * 0.045}deg)`;
+    const up = Math.max(0, -dy);
+    for (const k in stamps) stamps[k].style.opacity = 0;
+    if (up > Math.abs(dx)) stamps[LOVE].style.opacity = Math.min(1, up / THRESH_Y);
+    else if (dx > 0) stamps[LIKE].style.opacity = Math.min(1, dx / THRESH_X);
+    else if (dx < 0) stamps[NOPE].style.opacity = Math.min(1, -dx / THRESH_X);
+  };
+
+  card.addEventListener('pointerdown', e => {
+    if (busy) return;
+    down = true; sx = e.clientX; sy = e.clientY;
+    card.classList.remove('animate'); card.setPointerCapture(e.pointerId);
   });
-  // Rebuild the queue periodically so the taste vector actually takes effect.
-  if (queue.length < 4 || rated % 10 === 0) await refill();
-  else document.getElementById('meta').textContent = `${rated} rated`;
+  card.addEventListener('pointermove', e => {
+    if (!down) return;
+    dx = e.clientX - sx; dy = e.clientY - sy; paint();
+  });
+  const release = () => {
+    if (!down) return;
+    down = false;
+    const v = verdict();
+    if (v) commit(v, card);
+    else { card.classList.add('animate'); dx = dy = 0; paint(); }
+  };
+  card.addEventListener('pointerup', release);
+  card.addEventListener('pointercancel', release);
+}
+
+function flyOut(card, v) {
+  card.classList.add('animate');
+  const off = v === LOVE ? 'translate(0, -130%) rotate(0deg)'
+            : v === LIKE ? 'translate(150%, 40px) rotate(22deg)'
+                         : 'translate(-150%, 40px) rotate(-22deg)';
+  card.style.transform = off;
+  card.style.opacity = 0;
+}
+
+async function commit(v, card) {
+  if (busy) return;
+  busy = true;
+  const c = queue.shift();
+  if (card) flyOut(card, v);
+  rated++;
+  el('meta').textContent = `${rated} rated`;
+
+  const done = fetch('/api/rate', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({uid: c.uid, rating: v})
+  });
+
+  // Let the card finish flying before the next one snaps into place.
+  setTimeout(async () => {
+    await done;
+    busy = false;
+    if (queue.length < 4 || rated % 12 === 0) await refill();
+    else render();
+  }, card ? 300 : 0);
+}
+
+function skip() {
+  if (busy || !queue.length) return;
+  queue.shift();   // not recorded: a skip carries no preference signal
+  render();
+  if (queue.length < 4) refill();
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key >= '1' && e.key <= '5' && queue.length) rate(parseInt(e.key));
+  if (!queue.length) return;
+  const card = el('deck').querySelector('.card:last-child');
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); commit(NOPE, card); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); commit(LIKE, card); }
+  if (e.key === 'ArrowUp')    { e.preventDefault(); commit(LOVE, card); }
+  if (e.key === ' ')          { e.preventDefault(); skip(); }
 });
-document.getElementById('undo').onclick = async () => {
-  await fetch('/api/undo', {method: 'POST'});
-  await refill();
-};
+
+el('bn').onclick = () => commit(NOPE, el('deck').querySelector('.card:last-child'));
+el('bk').onclick = () => commit(LIKE, el('deck').querySelector('.card:last-child'));
+el('bl').onclick = () => commit(LOVE, el('deck').querySelector('.card:last-child'));
+el('undo').onclick = async () => { await fetch('/api/undo', {method:'POST'}); await refill(); };
 
 refill();
 </script>
