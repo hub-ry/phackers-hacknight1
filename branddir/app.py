@@ -36,6 +36,7 @@ def db():
         platform TEXT,
         product_count INTEGER DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'pending',
+        in_corpus INTEGER NOT NULL DEFAULT 0,
         error TEXT)""")
     # UNIQUE(brand_id, voter_token) is what makes a re-vote an update instead of
     # another row - the only cheap defence against double-voting without accounts.
@@ -45,7 +46,30 @@ def db():
         value INTEGER NOT NULL,
         ts REAL NOT NULL,
         UNIQUE(brand_id, voter_token))""")
+    seed_corpus_brands(con)
     return con
+
+
+# The brands Swatch actually swipes are starred by default and always listed.
+# Everything the crowd adds is a suggestion only: nobody assembles a personal
+# brand stack, because pre-filtering the corpus would defeat the recommender -
+# it is supposed to discover taste from a broad fixed set, not be told upfront.
+def seed_corpus_brands(con):
+    if con.execute("SELECT 1 FROM brands WHERE in_corpus=1").fetchone():
+        return
+    parent = ROOT.parent / "brands.json"
+    if not parent.exists():
+        return
+    import json as _json
+    for name, cfg in _json.loads(parent.read_text()).items():
+        if "skip" in cfg:
+            continue
+        con.execute(
+            "INSERT OR IGNORE INTO brands "
+            "(name, url, submitter, created_at, platform, status, in_corpus) "
+            "VALUES (?,?,?,?, 'shopify', 'done', 1)",
+            (name, normalize_url(cfg["url"]), None, time.time()))
+    con.commit()
 
 
 # ---------------------------------------------------------------- ranking
@@ -152,6 +176,7 @@ def row_to_brand(r: sqlite3.Row) -> dict:
         "platform": r["platform"],
         "product_count": r["product_count"],
         "status": r["status"],
+        "in_corpus": r["in_corpus"],
         "error": r["error"],
         "up": r["up"],
         "down": r["down"],
@@ -171,7 +196,8 @@ def list_brands():
             GROUP BY b.id""").fetchall()
     brands = [row_to_brand(r) for r in rows]
     # Wilson first; newest wins ties so a fresh unvoted submission is visible.
-    brands.sort(key=lambda b: (-b["wilson"], -b["created_at"]))
+    # Starred (in-corpus) brands first, then suggestions by Wilson score.
+    brands.sort(key=lambda b: (-b["in_corpus"], -b["wilson"], -b["created_at"]))
     for i, b in enumerate(brands, 1):
         b["rank"] = i
     return {"brands": brands}

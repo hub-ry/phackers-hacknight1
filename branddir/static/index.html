@@ -63,6 +63,11 @@
            color:var(--muted); white-space:nowrap; }
   .badge.shopify { color:var(--up); border-color:#cfe3d6; }
   .badge.failed  { color:var(--down); border-color:#eed3d1; }
+  /* Starred = already in the swipe corpus. Everything else is a suggestion:
+     nobody builds a personal brand stack, which would defeat the recommender. */
+  .badge.starred { color:#8a6d1f; border-color:#e6d9b4; background:#fdf8ea;
+                   margin-left:8px; vertical-align:1px; }
+  .row.starred .rank { color:#c9a227; }
 
   .votes { display:flex; align-items:center; gap:4px; flex:none; }
   .votes button {
@@ -132,10 +137,11 @@ function render() {
   }
   list.innerHTML = brands.map(b => {
     const v = mine[b.id] || 0;
-    return `<li class="row">
-      <div class="rank">${b.rank}</div>
+    return `<li class="row${b.in_corpus ? ' starred' : ''}">
+      <div class="rank">${b.in_corpus ? '★' : b.rank}</div>
       <div class="body">
-        <div class="name">${esc(b.name)}</div>
+        <div class="name">${esc(b.name)}${b.in_corpus
+          ? '<span class="badge starred">in swatch</span>' : ''}</div>
         <div class="sub">
           <a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.domain)}</a>
           ${badge(b)}
