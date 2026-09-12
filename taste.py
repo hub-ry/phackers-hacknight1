@@ -175,7 +175,7 @@ class Corpus:
             chosen += list(rng.choice(pool, min(n_explore, len(pool)), replace=False))
 
         rng.shuffle(chosen)
-        return [uids[i] for i in chosen], f"{len(ratings)} rated · {k} taste{'s'[:k^1]}"
+        return [uids[i] for i in chosen], f"{k} group{'' if k == 1 else 's'}"
 
 
 if __name__ == "__main__":

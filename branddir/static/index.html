@@ -86,8 +86,8 @@
 
   <h2 class="display">Brands</h2>
   <p class="standfirst" id="meta">Loading…</p>
-  <p class="standfirst">Starred labels are the ones Swatch already swipes. Everything
-     else is a suggestion — vote it up and it climbs.</p>
+  <p class="standfirst">Starred labels are the ones Swatch already swipes. The rest
+     are suggestions. Vote one up and it climbs.</p>
 
   <p class="kicker">Suggest a label</p>
   <form id="f">
@@ -95,7 +95,7 @@
       <input id="name" required maxlength="80" placeholder="Story mfg."></div>
     <div class="field"><label>Website</label>
       <input id="url" required type="url" placeholder="https://storymfg.com"></div>
-    <div class="field"><label>Your name — optional</label>
+    <div class="field"><label>Your name, optional</label>
       <input id="submitter" maxlength="40" placeholder="anon"></div>
     <button class="send" id="go" type="submit">Submit</button>
     <p class="note" id="note"></p>
@@ -131,7 +131,7 @@ function detail(b) {
 
 function render() {
   if (!brands.length) {
-    el('list').innerHTML = '<li class="empty">Nothing here yet. Add the first label.</li>';
+    el('list').innerHTML = '<li class="empty">Nothing here yet.</li>';
     return;
   }
   el('list').innerHTML = brands.map(b => {
@@ -159,8 +159,8 @@ async function load() {
   mine = v.votes || {};
   const sugg = brands.filter(b => !b.in_corpus).length;
   el('meta').textContent =
-    `${brands.length} labels · ${sugg} suggested · ranked by Wilson score, so a few
-     votes cannot outrank a proven one.`;
+    `${brands.length} labels, ${sugg} suggested. Ranked by Wilson score, so three
+     upvotes will not beat two hundred.`;
   render();
   // Only keep polling while a background scrape is still outstanding.
   clearTimeout(poll);
@@ -198,7 +198,7 @@ el('f').addEventListener('submit', async e => {
     if (!r.ok) { note.className = 'note err'; note.textContent = d.detail || 'Could not add that one.'; }
     else {
       el('name').value = el('url').value = '';
-      note.textContent = 'Added — checking the storefront…';
+      note.textContent = 'Added. Checking the storefront...';
       await load();
     }
   } catch (err) {

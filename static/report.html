@@ -121,40 +121,39 @@ async function load() {
   </div>`;
 
   if (!d.ready) {
-    out.innerHTML = `<h2 class="display">Not enough yet</h2>
+    out.innerHTML = `<h2 class="display">Not yet</h2>
       <p class="standfirst">${esc(d.message)}</p>${figures}`;
     return;
   }
 
   const n = d.clusters.length;
-  let h = `<h2 class="display">${n} distinct taste${n > 1 ? 's' : ''}</h2>
-    <p class="standfirst">Drawn from ${d.rated} swipes. Nothing below is written by
-    hand — every grouping falls out of the vectors.</p>${figures}`;
+  let h = `<h2 class="display">${n} group${n > 1 ? 's' : ''}</h2>
+    <p class="standfirst">From ${d.rated} swipes. The groups and their labels come
+    out of the numbers, not from anyone writing them down.</p>${figures}`;
 
-  h += `<p class="kicker">The tastes</p>`;
+  h += `<p class="kicker">Groups</p>`;
   d.clusters.forEach((c, i) => {
     h += `<div class="entry">
       <div class="num">${ROMAN[i] || i + 1}</div>
       <h2>${esc(name(c))}</h2>
       <div class="meta">${c.size} likes · ${c.brands.map(esc).join(' · ')}</div>
       <p class="terms">${c.words.map(esc).join(', ')}</p>
-      <p class="egs">You liked ${c.examples.map(esc).join('; ')}.</p>
+      <p class="egs">Includes ${c.examples.map(esc).join('; ')}.</p>
       <div class="stack">${c.recommends.map(item).join('')}</div>
     </div>`;
   });
 
-  h += `<p class="kicker">Best of everything</p>
+  h += `<p class="kicker">Top scoring</p>
         <div class="stack">${d.top_picks.map(item).join('')}</div>`;
 
   if (d.avoiding && d.avoiding.words && d.avoiding.words.length) {
-    h += `<p class="kicker">Steering away from</p>
-      <p class="terms">${d.avoiding.words.map(esc).join(', ')}
-      <i>— mostly ${d.avoiding.brands.map(esc).join(', ')}</i></p>`;
+    h += `<p class="kicker">Noped</p>
+      <p class="terms">${d.avoiding.words.map(esc).join(', ')}.
+      <i>Mostly ${d.avoiding.brands.map(esc).join(', ')}</i></p>`;
   }
 
   h += `<div class="quiet"><button id="reset">Clear my taste</button>
-    <p>Deletes all ${d.rated} ratings. The taste vectors are derived from them,
-    so this resets the algorithm completely.</p></div>`;
+    <p>Deletes all ${d.rated} ratings. The groups are built from them, so they go too.</p></div>`;
 
   out.innerHTML = h;
   document.getElementById('reset').onclick = async () => {

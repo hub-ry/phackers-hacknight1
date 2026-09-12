@@ -1,6 +1,6 @@
 """Swatch server: swipe queue, taste report, and the brand suggestion board."""
 import json, pathlib, sqlite3, sys, time, collections, re
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -76,10 +76,20 @@ def undo():
 
 
 @app.post("/api/reset")
-def reset():
-    """Wipe every rating: the taste vectors are derived, so this clears them too."""
+def reset(request: Request):
+    """Wipe every rating: the taste vectors are derived, so this clears them too.
+
+    Loopback only. The app is served publicly through a tunnel, and this is the
+    one endpoint a stranger with the URL could use to destroy real data.
+    """
+    host = request.client.host if request.client else ""
+    if host not in ("127.0.0.1", "::1", "localhost"):
+        raise HTTPException(403, "reset is only available on the machine hosting swatch")
+    import shutil
     with db() as con:
         n = con.execute("SELECT COUNT(*) FROM ratings").fetchone()[0]
+    shutil.copy(DB, DB.with_suffix(".db.backup"))   # never lose swipes to one click
+    with db() as con:
         con.execute("DELETE FROM ratings")
     return {"ok": True, "cleared": n}
 
