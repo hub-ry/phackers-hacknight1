@@ -15,6 +15,11 @@ QUEUE = 12
 app = FastAPI()
 corpus = taste.Corpus()
 
+# Product pages live at <store>/products/<handle>; the manifest only keeps the
+# handle, so the store base comes back from brands.json.
+BRAND_BASE = {k: v["url"].rstrip("/")
+              for k, v in json.loads((ROOT / "brands.json").read_text()).items()}
+
 
 def db():
     con = sqlite3.connect(DB)
@@ -36,6 +41,7 @@ def card(uid):
         "brand": it["brand"],
         "price": it["price"],
         "image": f"/img/{download.cache_path(it).stem}.jpg",
+        "link": f"{BRAND_BASE.get(it['brand'], '')}/products/{it['url']}",
     }
 
 
