@@ -11,7 +11,7 @@ The taste vector associated with the reccomendation is adjusted with weights -1,
 
 
 ### Reccomendations
-I've been learning the process of how to do basic reccomendations. So far the first step is always normalizing, then subtracting the corups average. We normalize so that the we don't have to use the distance formula for the cosine similarity and we subtract the corpus average to exaggerate the difference in products-- in this case clothing (the average in this dataset was a black t-shirt)
+I've been learning the process of how to do basic reccomendations. So far the first step is always normalizing, then subtracting the corpus average. We normalize so that the we don't have to use the distance formula for the cosine similarity and we subtract the corpus average to exaggerate the difference in products-- in this case clothing (the average in this dataset was a black t-shirt)
 
 
 - cosine similarity. This is just a dot product thanks to step 1, it's returning how similar their angles are. 
