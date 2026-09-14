@@ -168,6 +168,24 @@ def report():
     return out
 
 
+@app.get("/api/liked")
+def liked():
+    """Everything rated love or like, loved first, each in the order it was rated."""
+    with db() as con:
+        rows = list(con.execute(
+            "SELECT uid, rating FROM ratings WHERE rating IN (?,?) ORDER BY rating DESC, ts",
+            (taste.LIKE, taste.LOVE)))
+        noped = con.execute("SELECT COUNT(*) FROM ratings WHERE rating = ?",
+                            (taste.NOPE,)).fetchone()[0]
+    items = [card(u) | {"rating": r} for u, r in rows if u in corpus.items]
+    return {
+        "loved": [c for c in items if c["rating"] == taste.LOVE],
+        "liked": [c for c in items if c["rating"] == taste.LIKE],
+        "noped": noped,
+        "rated": len(rows) + noped,
+    }
+
+
 @app.get("/api/stats")
 def stats():
     with db() as con:

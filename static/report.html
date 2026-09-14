@@ -7,17 +7,13 @@
 <style>
   :root {
     --paper:#faf9f6; --ink:#14130f; --soft:#6f6c62; --rule:#dcd8cf;
-    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
     --sans: ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif;
   }
   * { box-sizing:border-box; }
   html { -webkit-text-size-adjust:100%; }
-  body { margin:0; background:var(--paper); color:var(--ink);
-         font:16px/1.65 var(--serif); }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.65 var(--sans); }
 
-  /* One narrow column, everything stacked. No cards, no boxes, no shadows -
-     the page is held together by rules and spacing, the way print is. */
-  .col { max-width:600px; margin:0 auto; padding:0 24px 120px; }
+  .col { max-width:1180px; margin:0 auto; padding:0 24px 100px; }
 
   .masthead { padding:44px 0 0; }
   .masthead h1 { font:400 13px/1 var(--sans); letter-spacing:.34em;
@@ -26,57 +22,25 @@
                   letter-spacing:.12em; text-transform:uppercase; }
   .masthead nav a { color:var(--soft); text-decoration:none; margin-right:18px; }
   .masthead nav a:hover { color:var(--ink); }
-  .rule { border:0; border-top:1px solid var(--rule); margin:26px 0; }
-  .rule.thick { border-top-width:2px; }
+  .rule { border:0; border-top:2px solid var(--rule); margin:26px 0; }
 
-  .display { font:400 42px/1.1 var(--serif); letter-spacing:-.015em; margin:34px 0 10px; }
-  .standfirst { font:400 15px/1.6 var(--serif); color:var(--soft); margin:0 0 4px; }
+  /* Images only: loved first, then liked, each in the order they were rated. */
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(5, minmax(0, 1fr)); }
+  .grid a { display:block; min-width:0; }
+  .grid img { width:100%; aspect-ratio:4/5; object-fit:contain;
+              background:#fff; display:block; border:1px solid var(--rule); }
+  .grid a:hover img { border-color:var(--ink); }
 
-  /* Tallies read as a line of figures, not as four little boxes. */
-  .figures { display:flex; gap:34px; margin:28px 0 0; flex-wrap:wrap; }
-  .fig b { display:block; font:400 34px/1 var(--serif); letter-spacing:-.02em; }
-  .fig span { display:block; margin-top:5px; font:400 10px/1 var(--sans);
-              letter-spacing:.18em; text-transform:uppercase; color:var(--soft); }
-
-  .kicker { font:400 10px/1 var(--sans); letter-spacing:.22em;
-            text-transform:uppercase; color:var(--soft); margin:56px 0 18px; }
-
-  /* Each taste is a numbered entry in a list, not a card. */
-  .entry { padding:26px 0; border-top:1px solid var(--rule); }
-  .entry:first-of-type { border-top:2px solid var(--ink); }
-  .num { font:400 11px/1 var(--sans); letter-spacing:.2em; color:var(--soft); }
-  .entry h2 { font:400 30px/1.15 var(--serif); margin:12px 0 8px; letter-spacing:-.01em; }
-  .entry .meta { font:400 11px/1.6 var(--sans); letter-spacing:.13em;
-                 text-transform:uppercase; color:var(--soft); margin-bottom:14px; }
-  .terms { font:400 15px/1.7 var(--serif); color:var(--ink); margin:0 0 14px; }
-  .terms i { font-style:italic; color:var(--soft); }
-  .egs { font:400 13px/1.7 var(--serif); color:var(--soft); margin:0; }
-
-  /* Products stack vertically, full column width, tall images. */
-  .stack { margin-top:26px; }
-  .item { display:block; text-decoration:none; color:inherit;
-          padding:18px 0; border-top:1px solid var(--rule); }
-  .item:hover h3 { text-decoration:underline; }
-  .item img { width:100%; aspect-ratio:4/5; object-fit:contain;
-              background:#fff; display:block; margin-bottom:14px; }
-  .item h3 { font:400 21px/1.25 var(--serif); margin:0 0 5px; }
-  .item .line { font:400 10px/1 var(--sans); letter-spacing:.18em;
-                text-transform:uppercase; color:var(--soft);
-                display:flex; justify-content:space-between; gap:12px; }
-
-  .note { font:400 15px/1.7 var(--serif); color:var(--soft); }
-  .quiet { margin-top:80px; padding-top:22px; border-top:1px solid var(--rule); }
+  .note { color:var(--soft); }
+  .quiet { margin-top:64px; padding-top:20px; border-top:1px solid var(--rule); }
   .quiet button { font:400 11px/1 var(--sans); letter-spacing:.16em;
                   text-transform:uppercase; background:none; border:0;
                   border-bottom:1px solid var(--rule); color:var(--soft);
                   padding:0 0 4px; cursor:pointer; }
   .quiet button:hover { color:#a33; border-color:#a33; }
-  .quiet p { font:400 13px/1.6 var(--serif); color:var(--soft); margin:12px 0 0; }
 
   @media (max-width:480px) {
-    .display { font-size:34px; }
-    .entry h2 { font-size:25px; }
-    .figures { gap:26px; }
+    .grid { gap:6px; }
   }
 </style>
 </head>
@@ -86,76 +50,29 @@
     <h1>Swatch</h1>
     <nav><a href="/">Swipe</a><a href="/brands/">Brands</a><a href="/report">Taste</a></nav>
   </div>
-  <hr class="rule thick">
+  <hr class="rule">
   <div id="out"><p class="note">Loading…</p></div>
 </div>
 
 <script>
-const esc = s => String(s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-const ROMAN = ['I','II','III','IV','V','VI'];
+const esc = s => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 
-function item(p) {
-  return `<a class="item" href="${esc(p.link)}" target="_blank" rel="noopener">
-    <img src="${esc(p.image)}" alt="" loading="lazy">
-    <h3>${esc(p.title)}</h3>
-    <div class="line"><span>${esc(p.brand)}</span><span>${p.price ? '$' + esc(p.price) : ''}</span></div>
-  </a>`;
-}
-
-// A cluster has no name of its own. Naming it after the words its members
-// repeat keeps the label honest about where it came from.
-function name(c) {
-  const w = c.words.slice(0, 2);
-  return w.length ? w.join(' & ') : 'Taste ' + (c.id + 1);
-}
+const tile = p => `<a href="${esc(p.link)}" target="_blank" rel="noopener">
+  <img src="${esc(p.image)}" alt="${esc(p.title)}" title="${esc(p.title)}" loading="lazy"></a>`;
 
 async function load() {
-  const d = await fetch('/api/report').then(r => r.json());
+  const d = await fetch('/api/liked').then(r => r.json());
   const out = document.getElementById('out');
+  const kept = d.loved.concat(d.liked);
 
-  const figures = `<div class="figures">
-    <div class="fig"><b>${d.rated}</b><span>Rated</span></div>
-    <div class="fig"><b>${d.loved}</b><span>Loved</span></div>
-    <div class="fig"><b>${d.liked}</b><span>Liked</span></div>
-    <div class="fig"><b>${d.noped}</b><span>Noped</span></div>
-  </div>`;
-
-  if (!d.ready) {
-    out.innerHTML = `<h2 class="display">Not yet</h2>
-      <p class="standfirst">${esc(d.message)}</p>${figures}`;
+  if (!kept.length) {
+    out.innerHTML = `<p class="note">Swipe right or up on something and it shows up here.</p>`;
     return;
   }
 
-  const n = d.clusters.length;
-  let h = `<h2 class="display">${n} group${n > 1 ? 's' : ''}</h2>
-    <p class="standfirst">From ${d.rated} swipes. The groups and their labels come
-    out of the numbers, not from anyone writing them down.</p>${figures}`;
+  out.innerHTML = `<div class="grid">${kept.map(tile).join('')}</div>
+    <div class="quiet"><button id="reset">Clear my taste</button></div>`;
 
-  h += `<p class="kicker">Groups</p>`;
-  d.clusters.forEach((c, i) => {
-    h += `<div class="entry">
-      <div class="num">${ROMAN[i] || i + 1}</div>
-      <h2>${esc(name(c))}</h2>
-      <div class="meta">${c.size} likes · ${c.brands.map(esc).join(' · ')}</div>
-      <p class="terms">${c.words.map(esc).join(', ')}</p>
-      <p class="egs">Includes ${c.examples.map(esc).join('; ')}.</p>
-      <div class="stack">${c.recommends.map(item).join('')}</div>
-    </div>`;
-  });
-
-  h += `<p class="kicker">Top scoring</p>
-        <div class="stack">${d.top_picks.map(item).join('')}</div>`;
-
-  if (d.avoiding && d.avoiding.words && d.avoiding.words.length) {
-    h += `<p class="kicker">Noped</p>
-      <p class="terms">${d.avoiding.words.map(esc).join(', ')}.
-      <i>Mostly ${d.avoiding.brands.map(esc).join(', ')}</i></p>`;
-  }
-
-  h += `<div class="quiet"><button id="reset">Clear my taste</button>
-    <p>Deletes all ${d.rated} ratings. The groups are built from them, so they go too.</p></div>`;
-
-  out.innerHTML = h;
   document.getElementById('reset').onclick = async () => {
     if (!confirm('Delete all ' + d.rated + ' ratings? This cannot be undone.')) return;
     await fetch('/api/reset', {method: 'POST'});
