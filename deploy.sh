@@ -12,6 +12,7 @@ rsync -az \
   --exclude 'data/images/' \
   --exclude 'data/ratings.db' \
   --exclude 'data/ratings.db.backup' \
+  --exclude 'data/ratings.db.premigrate' \
   --exclude 'data/contact_sheet.jpg' \
   --exclude '__pycache__/' \
   --exclude '.git/' \

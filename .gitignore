@@ -4,8 +4,8 @@ data/normalized/
 data/*.npy
 __pycache__/
 *.pyc
-data/ratings.db
 .venv/
 data/contact_sheet.jpg
 branddir/data/*.db
 branddir/__pycache__/
+data/ratings.db*

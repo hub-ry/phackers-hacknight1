@@ -1,6 +1,6 @@
 """Swatch server: swipe queue, taste report, and the brand suggestion board."""
-import json, pathlib, sqlite3, sys, time, collections, re
-from fastapi import FastAPI, Request, HTTPException
+import json, pathlib, sqlite3, sys, time, uuid, collections, re
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -25,13 +25,32 @@ BRAND_BASE = {k: v["url"].rstrip("/")
 def db():
     con = sqlite3.connect(DB)
     con.execute("CREATE TABLE IF NOT EXISTS ratings ("
-                "uid TEXT PRIMARY KEY, rating INTEGER, ts REAL)")
+                "user_id TEXT NOT NULL, uid TEXT NOT NULL, "
+                "rating INTEGER NOT NULL, ts REAL NOT NULL, "
+                "PRIMARY KEY (user_id, uid))")
     return con
 
 
-def all_ratings():
+# A coat check ticket, not an account: the id names which rows are yours and
+# carries no meaning of its own. 122 random bits, so nobody guesses their way
+# into someone else's taste, which is also why it needs no signature.
+COOKIE = "swatch_uid"
+COOKIE_YEARS = 10
+
+
+def user_id(request: Request, response: Response) -> str:
+    uid = request.cookies.get(COOKIE)
+    if not uid:
+        uid = uuid.uuid4().hex
+        response.set_cookie(COOKIE, uid, max_age=COOKIE_YEARS * 365 * 24 * 3600,
+                            path="/", httponly=True, secure=True, samesite="lax")
+    return uid
+
+
+def all_ratings(user):
     with db() as con:
-        return {u: r for u, r in con.execute("SELECT uid, rating FROM ratings")}
+        return {u: r for u, r in con.execute(
+            "SELECT uid, rating FROM ratings WHERE user_id = ?", (user,))}
 
 
 def card(uid):
@@ -52,45 +71,46 @@ class Rating(BaseModel):
 
 
 @app.get("/api/queue")
-def queue():
-    ratings = all_ratings()
+def queue(request: Request, response: Response):
+    ratings = all_ratings(user_id(request, response))
     uids, mode = corpus.feed(ratings, n=QUEUE)
     return {"cards": [card(u) for u in uids], "rated": len(ratings), "mode": mode}
 
 
 @app.post("/api/rate")
-def rate(r: Rating):
+def rate(r: Rating, request: Request, response: Response):
     if r.rating not in taste.WEIGHTS:
         return {"ok": False, "error": "rating must be 1 (nope), 2 (like) or 3 (love)"}
     with db() as con:
-        con.execute("INSERT OR REPLACE INTO ratings VALUES (?,?,?)",
-                    (r.uid, r.rating, time.time()))
+        con.execute("INSERT OR REPLACE INTO ratings VALUES (?,?,?,?)",
+                    (user_id(request, response), r.uid, r.rating, time.time()))
     return {"ok": True}
 
 
 @app.post("/api/undo")
-def undo():
+def undo(request: Request, response: Response):
+    me = user_id(request, response)
     with db() as con:
-        con.execute("DELETE FROM ratings WHERE ts = (SELECT MAX(ts) FROM ratings)")
+        con.execute("DELETE FROM ratings WHERE user_id = ? AND ts = "
+                    "(SELECT MAX(ts) FROM ratings WHERE user_id = ?)", (me, me))
     return {"ok": True}
 
 
 @app.post("/api/reset")
-def reset(request: Request):
-    """Wipe every rating: the taste vectors are derived, so this clears them too.
+def reset(request: Request, response: Response):
+    """Wipe the caller's ratings: the taste vectors are derived, so they go too.
 
-    Loopback only. The app is served publicly through a tunnel, and this is the
-    one endpoint a stranger with the URL could use to destroy real data.
+    Scoped to one user, so the button on the taste page can no longer take
+    everyone else's swipes down with it.
     """
-    host = request.client.host if request.client else ""
-    if host not in ("127.0.0.1", "::1", "localhost"):
-        raise HTTPException(403, "reset is only available on the machine hosting swatch")
     import shutil
+    me = user_id(request, response)
     with db() as con:
-        n = con.execute("SELECT COUNT(*) FROM ratings").fetchone()[0]
+        n = con.execute("SELECT COUNT(*) FROM ratings WHERE user_id = ?",
+                        (me,)).fetchone()[0]
     shutil.copy(DB, DB.with_suffix(".db.backup"))   # never lose swipes to one click
     with db() as con:
-        con.execute("DELETE FROM ratings")
+        con.execute("DELETE FROM ratings WHERE user_id = ?", (me,))
     return {"ok": True, "cleared": n}
 
 
@@ -118,9 +138,9 @@ def describe(uids, n=6):
 
 
 @app.get("/api/report")
-def report():
+def report(request: Request, response: Response):
     """Describe the taste the swipes have produced so far."""
-    ratings = all_ratings()
+    ratings = all_ratings(user_id(request, response))
     hist = collections.Counter(ratings.values())
     n_pos = hist[taste.LIKE] + hist[taste.LOVE]
 
@@ -169,14 +189,16 @@ def report():
 
 
 @app.get("/api/liked")
-def liked():
+def liked(request: Request, response: Response):
     """Everything rated love or like, loved first, each in the order it was rated."""
+    me = user_id(request, response)
     with db() as con:
         rows = list(con.execute(
-            "SELECT uid, rating FROM ratings WHERE rating IN (?,?) ORDER BY rating DESC, ts",
-            (taste.LIKE, taste.LOVE)))
-        noped = con.execute("SELECT COUNT(*) FROM ratings WHERE rating = ?",
-                            (taste.NOPE,)).fetchone()[0]
+            "SELECT uid, rating FROM ratings WHERE user_id = ? AND rating IN (?,?) "
+            "ORDER BY rating DESC, ts", (me, taste.LIKE, taste.LOVE)))
+        noped = con.execute(
+            "SELECT COUNT(*) FROM ratings WHERE user_id = ? AND rating = ?",
+            (me, taste.NOPE)).fetchone()[0]
     items = [card(u) | {"rating": r} for u, r in rows if u in corpus.items]
     return {
         "loved": [c for c in items if c["rating"] == taste.LOVE],
@@ -187,10 +209,11 @@ def liked():
 
 
 @app.get("/api/stats")
-def stats():
+def stats(request: Request, response: Response):
     with db() as con:
         rows = list(con.execute(
-            "SELECT rating, COUNT(*) FROM ratings GROUP BY rating ORDER BY rating"))
+            "SELECT rating, COUNT(*) FROM ratings WHERE user_id = ? "
+            "GROUP BY rating ORDER BY rating", (user_id(request, response),)))
     return {"histogram": {str(r): c for r, c in rows}}
 
 
